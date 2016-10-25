@@ -6,13 +6,18 @@ INPUT: URL
 -Python kopiowanie tabeli do csv
 -formatowanie danych w excel
 OUTPUT: Excel import_briefing.com
-　
+-??dane w jednej kolumnie???
+-??dane z datami jako actual i change
+
+ 
 *import stooq.pl economic
 INPUT: URL
 -import historii
 -import kolejnych danych codziennie
 OUTPUT: Excel import_stooq.com
-　
+-??dane w jednej kolumnie???
+-??dane z datami jako actual i change
+
 *import Cot data and convert
 INPUT: URL
 -C++ zapisanei pliku z url i rozpakowanie zip
