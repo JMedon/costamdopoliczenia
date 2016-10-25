@@ -20,7 +20,7 @@ OUTPUT: Excel import_stooq.com
 
 *import Cot data and convert
 INPUT: URL
--C++ zapisanei pliku z url i rozpakowanie zip
+-python zapisanei pliku z url i rozpakowanie zip
 -tabela z datami publikacji
 -Excel obrobka danych
 OUTPUT: Excel import_CoT
