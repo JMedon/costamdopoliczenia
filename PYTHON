@@ -10,3 +10,11 @@ Python's superb Pandas library has handy read_html and to_csv functions
 http://stackoverflow.com/questions/25056120/using-pandas-to-read-downloaded-html-file
 
 
+zapisywanie pliku:
+http://stackoverflow.com/questions/19602931/basic-http-file-downloading-and-saving-to-disk-in-python
+odpakowanie pliku:
+http://stackoverflow.com/questions/9431918/extracting-zip-file-contents-to-specific-directory-in-python-2-7
+
+http://www.cftc.gov/files/dea/history/fut_disagg_xls_2016.zip
+
+
