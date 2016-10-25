@@ -3,6 +3,8 @@ PYTHON
 https://pl.python.org/forum/index.php?topic=12.0
 
 http://stackoverflow.com/questions/10556048/how-to-extract-tables-from-websites-in-python
+http://stackoverflow.com/questions/2870667/how-to-convert-an-html-table-to-an-array-in-python
+
 
 Python's superb Pandas library has handy read_html and to_csv functions
 http://stackoverflow.com/questions/25056120/using-pandas-to-read-downloaded-html-file
