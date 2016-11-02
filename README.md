@@ -4,6 +4,7 @@
 *import briefing.com
 INPUT: URL
 -Python kopiowanie tabeli do csv
+kod nei dziala!!!
 -formatowanie danych w excel
 OUTPUT: Excel import_briefing.com
 -??dane w jednej kolumnie???
