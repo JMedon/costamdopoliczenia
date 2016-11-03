@@ -1,0 +1,773 @@
+
+
+Global nazwaRynku As String
+Global optymalizacja As Double
+Global rozmiarWierszy As Double
+Global countmidDate As Double
+Global countStartOutDate As Double
+Global alfa As Double
+
+Global mnoznik(1 To 178) As Double
+Global prog(0 To 67) As Double
+Global a(1 To 18) As Integer
+Global b(1 To 18) As Integer
+Global SL_L(1 To 18) As Integer
+Global SL_S(1 To 18) As Integer
+Global SL_Double(1 To 18) As Integer
+Global alfaEMA(1 To 23) As Double
+
+
+Global sRano As Integer
+Global kierWdzien As Integer
+Global sWieczor As Integer
+Global sSL As Integer
+Global trade As Double
+Global tradeIn As Double
+
+Public Type Par
+   min As Double
+   max As Double
+   step As Double
+   wide As Double
+   best As Double
+   i As Double
+End Type
+
+Dim sredniZyskF As Double, kierunekF As Double, progF As Double
+Dim iTryb As Par, iSL1 As Par, iSL2 As Par, iEMA As Par, iHourDzien As Par, iHourNoc As Par, iprogDzien As Par, iprogNoc As Par
+Dim pTick As Double
+Dim pSpread As Double
+
+Dim D() As Double
+Dim t() As Double
+Dim O() As Double
+Dim h() As Double
+Dim l() As Double
+Dim C() As Double
+Dim V() As Double
+Dim Vwap() As Double
+Dim countDays() As Double
+Dim nowNewday() As Double
+Dim now16() As Double
+      
+Dim timeDzien() As Double
+Dim timeNoc() As Double
+Dim cenaDzien() As Double
+Dim cenaNoc() As Double
+
+Dim EMA1() As Double
+Dim trendEMA() As Double
+Dim H1() As Double
+Dim L1() As Double
+Dim H11() As Double
+Dim L11() As Double
+Dim DzienSL() As Double
+Dim bazaSL() As Double
+Dim CenaBuySL() As Double
+Dim CenaShortSL() As Double
+Dim kierDzien() As Double
+Dim kierNoc() As Double
+Dim BuySL() As Double
+Dim ShortSL() As Double
+Dim Kierunek() As Double
+Dim Cena() As Double
+Dim ZyskCum() As Double
+Dim Zysk() As Double
+Dim PL() As Double
+
+Dim luka() As Double
+Dim Dzien() As Double
+Dim luka1() As Double
+Dim dzien1() As Double
+Dim luka2() As Double
+Dim dzien2() As Double
+
+Sub BravoM15_B_GOTOWIEC_USA()
+   '---------------------------------------------------------------------------------------
+   ' Method : BravoM15_B
+   ' Author : Jakub Medon
+   ' Date   : 2016-05-28
+   ' Purpose: Optimization "Bravo" intraday strategy m15
+   '---------------------------------------------------------------------------------------
+   startTime = Timer
+   On Error GoTo MojaProce_Error
+   With Application
+      .ScreenUpdating = False
+      .Calculation = xlCalculationManual
+      .UseSystemSeparators = False
+      .DecimalSeparator = "."
+   End With
+
+
+   startDate = 20130101:       midDate = 20160101:     startOutDate = 20160501
+   optymalizacja = 0: iteracja = 0
+
+   For i = 1 To 178 'zaimportowanie tablicy mnoznik
+      If i <= 178 Then
+         mnoznik(i) = Sheets("ustawienia").Cells(i + 1, 1)
+      End If
+      If i <= 68 Then
+         prog(i - 1) = Sheets("ustawienia").Cells(i + 0, 2)
+      End If
+      If i <= 23 Then
+         alfaEMA(i) = Sheets("ustawienia").Cells(i + 1, 3)
+      End If
+      If i <= 18 Then
+         a(i) = Sheets("ustawienia").Cells(i + 1, 4)
+         b(i) = Sheets("ustawienia").Cells(i + 1, 5)
+         SL_L(i) = Sheets("ustawienia").Cells(i + 1, 6)
+         SL_S(i) = Sheets("ustawienia").Cells(i + 1, 7)
+         SL_Double(i) = Sheets("ustawienia").Cells(i + 1, 8)
+      End If
+   Next i
+
+   '##########################################################
+   '####################### IMPORT DATA ######################
+   '##########################################################
+   Set fs = CreateObject("Scripting.FileSystemObject")
+   PATCHstr = "D:\BravoD1\"
+
+   ChDir PATCHstr
+   strplik = Dir(PATCHstr & "\*.txt") '#
+
+
+   '   Open PATCHstr & "\new\" & "time1.txt" For Output As #7
+   '   Print #7, "Wczytanie tablic: " & Round(Timer - startTime, 6)
+
+  ' Do While strplik <> "" ' looopowanie po plikach
+      For R = 1 To 1
+      nazwaRynku = Sheets("Rynki").Cells(R, 1)
+      strplik = "M15_" & nazwaRynku & ".txt" '"D:\BravoD1\
+      '       splitStrPLik = Split(strplik, ".txt")
+       '       nazwaRynku = splitStrPLik(0)
+      Open PATCHstr & "\eq\" & nazwaRynku & "_equityUSAsimComAll1aHL4.txt" For Output As #5
+      
+      'Open PATCHstr & "\" & strplik For Input As #3
+      'Close #3
+      
+      rozmiarWierszy = countRowsInFile(PATCHstr, strplik, ";", startDate, midDate, startOutDate)
+      Open PATCHstr & "\new\" & nazwaRynku & "_wyniki_iteracjiUSAnoCommAll1aHL4.txt" For Output As #6
+       
+      'utworzenie tablic
+      ReDim D(1 To rozmiarWierszy) As Double
+      ReDim t(1 To rozmiarWierszy) As Double
+      ReDim O(1 To rozmiarWierszy) As Double
+      ReDim h(1 To rozmiarWierszy) As Double
+      ReDim l(1 To rozmiarWierszy) As Double
+      ReDim C(1 To rozmiarWierszy) As Double
+      ReDim V(1 To rozmiarWierszy) As Double
+      ReDim Vwap(1 To rozmiarWierszy) As Double
+      ReDim countDays(1 To rozmiarWierszy) As Double
+      ReDim nowNewday(1 To rozmiarWierszy) As Double
+      ReDim now16(1 To rozmiarWierszy) As Double
+      countDays(1) = 1
+
+      'wczytanie danych
+      Open PATCHstr & "\" & strplik For Input As #3
+      i = 0
+      Do While Not EOF(3)
+         Line Input #3, Textline
+         ArrCells = Split(Textline, ";")
+         If Val(Left(ArrCells(0), 8)) > startDate And Val(Right(ArrCells(0), 4)) > 915 And Val(Right(ArrCells(0), 4)) < 1615 Then
+            i = i + 1
+
+            D(i) = Val(Left(ArrCells(0), 8))
+            t(i) = Val(Right(ArrCells(0), 4))
+            O(i) = Val(ArrCells(1))
+            h(i) = Val(ArrCells(2))
+            l(i) = Val(ArrCells(3))
+            C(i) = Val(ArrCells(4))
+            V(i) = Val(ArrCells(5))
+            Vwap(i) = Val(ArrCells(5))
+
+            countDays(i) = countDays(max(1, i - 1)) + IIf(D(i) <> D(max(1, i - 1)), 1, 0)
+            nowNewday(i) = IIf(D(i) <> D(max(1, i - 1)), 1, 0)
+            now16(i) = IIf(t(max(1, i - 1)) <= 1600 And t(i) >= 1600, 1, 0)
+                
+            '  If Val(Left(ArrCells(0), 8)) > midDate Then
+            '      'POLICZENIE NAJMNIEJSZEGO TICKA
+            '      If Val((h(i) - O(i))) = 0 Then
+            '          min1 = 100
+            '      Else: min1 = Abs(h(i) - O(i))
+            '      End If
+            '      If Val((C(i) - O(i))) = 0 Then
+            '          min2 = 100
+            '      Else: min2 = Abs(C(i) - O(i))
+            '      End If
+            '      If Val((l(i) - O(i))) = 0 Then
+            '          min3 = 100
+            '     Else: min3 = Abs(l(i) - O(i))
+            '     End If
+            '     Increment = min(Increment, min(min(min1, min2), min3))
+            '  End If
+         End If
+      Loop
+      Close #3
+      'pominiecie rynkow ktore nie maja wystarczajaco danych
+      If D(rozmiarWierszy) < midDate Then 'D(1) > startDate + 5 Or
+         GoTo continue_loop
+      End If
+
+      pTick = 0.01 'max(0.0001, TickerEstimation(Increment))   '   # minimal tick increment
+      pSpread = 0.006 * 1    '0#   'pTick * 1# '  # koszta (commision+spread)
+
+      ile = rozmiarWierszy 'countStartOutDate
+      bestSharpeIn = -100
+      Increment = 1000000
+
+      ReDim timeDzien(1 To rozmiarWierszy) As Double
+      ReDim timeNoc(1 To rozmiarWierszy) As Double
+      ReDim cenaDzien(1 To rozmiarWierszy) As Double
+      ReDim cenaNoc(1 To rozmiarWierszy) As Double
+
+      ReDim EMA1(1 To rozmiarWierszy) As Double
+      ReDim trendEMA(1 To rozmiarWierszy) As Double
+      ReDim H1(1 To rozmiarWierszy) As Double
+      ReDim L1(1 To rozmiarWierszy) As Double
+      ReDim H11(1 To rozmiarWierszy) As Double
+      ReDim L11(1 To rozmiarWierszy) As Double
+      ReDim DzienSL(1 To rozmiarWierszy) As Double
+      ReDim bazaSL(1 To rozmiarWierszy) As Double
+      ReDim CenaBuySL(1 To rozmiarWierszy) As Double
+      ReDim CenaShortSL(1 To rozmiarWierszy) As Double
+      ReDim kierDzien(1 To rozmiarWierszy) As Double
+      ReDim kierNoc(1 To rozmiarWierszy) As Double
+      ReDim BuySL(1 To rozmiarWierszy) As Double
+      ReDim ShortSL(1 To rozmiarWierszy) As Double
+      ReDim Kierunek(1 To rozmiarWierszy) As Double
+      ReDim Cena(1 To rozmiarWierszy) As Double
+      ReDim ZyskCum(1 To rozmiarWierszy) As Double
+      ReDim PL(1 To 1000000) As Double
+        
+      ileDni = countDays(countmidDate)
+
+      ReDim luka(1 To ileDni) As Double
+      ReDim Dzien(1 To ileDni) As Double
+      ReDim luka1(1 To ileDni) As Double
+      ReDim dzien1(1 To ileDni) As Double
+      ReDim luka2(1 To ileDni) As Double
+      ReDim dzien2(1 To ileDni) As Double
+      
+      countDays(1) = 1
+      cenaDzien(1) = O(1)
+      cenaNoc(1) = O(1)
+      Cena(1) = O(1)
+
+        iHourDzien.wide = 1
+        iHourNoc.wide = 1
+        iEMA.wide = 1
+        iSL1.wide = 10
+        iSL2.wide = 10
+        '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!   OPTYMALIZACJA 1:  wybranie godzin, SL step 10 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        iTryb.min = 1:   iTryb.max = 1: iTryb.step = 1
+        iSL1.min = 1:   iSL1.max = 141: iSL1.step = 10
+        iSL2.min = 119:   iSL2.max = 119: iSL2.step = 1
+        iEMA.min = 1:   iEMA.max = 1: iEMA.step = 1
+        iHourDzien.min = 0:   iHourDzien.max = 10: iHourDzien.step = 2
+        iHourNoc.min = -10:   iHourNoc.max = 0: iHourNoc.step = 2
+        iprogDzien.min = 1:     iprogDzien.max = 1: iprogDzien.step = 1
+        iprogNoc.min = 1:     iprogNoc.max = 1: iprogNoc.step = 1
+
+        STRATEGY_BRAVO_M15_SL1
+      
+        '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!   OPTYMALIZACJA 1:  wybranie godzin, SL step 10 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        iTryb.min = 1:   iTryb.max = 1: iTryb.step = 1
+        iSL1.min = 1:   iSL1.max = 141: iSL1.step = 10
+        iSL2.min = 119:   iSL2.max = 119: iSL2.step = 1
+        iEMA.min = 1:   iEMA.max = 1: iEMA.step = 1
+        iHourDzien.min = max(0, iHourDzien.best - iHourDzien.wide): iHourDzien.max = iHourDzien.best + iHourDzien.wide: iHourDzien.step = 1
+        iHourNoc.min = iHourNoc.best - iHourNoc.wide: iHourNoc.max = min(0, iHourNoc.best + iHourNoc.wide): iHourNoc.step = 1
+        iprogDzien.min = 1:     iprogDzien.max = 1: iprogDzien.step = 1
+        iprogNoc.min = 1:     iprogNoc.max = 1: iprogNoc.step = 1
+
+        STRATEGY_BRAVO_M15_SL1
+        
+        
+        '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!   OPTYMALIZACJA 1:  wybranie godzin, SL step 10 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        iTryb.min = 1:   iTryb.max = 1: iTryb.step = 1
+        iSL1.min = 1:   iSL1.max = 141: iSL1.step = 10
+        iSL2.min = 119:   iSL2.max = 119: iSL2.step = 1
+        iEMA.min = 1:   iEMA.max = 1: iEMA.step = 1
+        iHourDzien.min = iHourDzien.best: iHourDzien.max = iHourDzien.best: iHourDzien.step = 2
+        iHourNoc.min = iHourNoc.best:   iHourNoc.max = iHourNoc.best: iHourNoc.step = 1
+        iprogDzien.min = 1:     iprogDzien.max = 1: iprogDzien.step = 1
+        iprogNoc.min = 1:     iprogNoc.max = 1: iprogNoc.step = 1
+
+        STRATEGY_BRAVO_M15_SL1
+        '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!   OPTYMALIZACJA 3:  prog Dzien !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        iTryb.min = iTryb.best:   iTryb.max = iTryb.best: iTryb.step = 1
+        iSL1.min = iSL1.best:   iSL1.max = iSL1.best: iSL1.step = 5
+        iSL2.min = 119:   iSL2.max = 119: iSL2.step = 1
+        iEMA.min = 1:   iEMA.max = 1: iEMA.step = 1
+        iHourDzien.min = iHourDzien.best: iHourDzien.max = iHourDzien.best: iHourDzien.step = 2
+        iHourNoc.min = iHourNoc.best:   iHourNoc.max = iHourNoc.best: iHourNoc.step = 1
+        iprogDzien.min = 1:     iprogDzien.max = 67: iprogDzien.step = 1
+        iprogNoc.min = 1:     iprogNoc.max = 1: iprogNoc.step = 1
+ 
+        STRATEGY_BRAVO_M15_SL1
+        '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!   OPTYMALIZACJA 4:  prog Noc !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        iTryb.min = iTryb.best:   iTryb.max = iTryb.best: iTryb.step = 1
+        iSL1.min = iSL1.best:   iSL1.max = iSL1.best: iSL1.step = 5
+        iSL2.min = 119:   iSL2.max = 119: iSL2.step = 1
+        iEMA.min = 1:   iEMA.max = 1: iEMA.step = 1
+        iHourDzien.min = iHourDzien.best: iHourDzien.max = iHourDzien.best: iHourDzien.step = 2
+        iHourNoc.min = iHourNoc.best:   iHourNoc.max = iHourNoc.best: iHourNoc.step = 1
+        iprogDzien.min = iprogDzien.best:     iprogDzien.max = iprogDzien.best: iprogDzien.step = 1
+        iprogNoc.min = 1:     iprogNoc.max = 67: iprogNoc.step = 1
+ 
+        STRATEGY_BRAVO_M15_SL1
+        '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!   OPTYMALIZACJA 4.5:  WYBRANIE SL 1!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        iTryb.min = iTryb.best:   iTryb.max = iTryb.best: iTryb.step = 1
+        iSL1.min = 1:   iSL1.max = 141: iSL1.step = 1
+        iSL2.min = 1:   iSL2.max = 1: iSL2.step = 1
+        iEMA.min = 1:   iEMA.max = 1: iEMA.step = 2
+        iHourDzien.min = iHourDzien.best: iHourDzien.max = iHourDzien.best: iHourDzien.step = 2
+        iHourNoc.min = iHourNoc.best:   iHourNoc.max = iHourNoc.best: iHourNoc.step = 1
+        iprogDzien.min = iprogDzien.best:     iprogDzien.max = iprogDzien.best: iprogDzien.step = 1
+        iprogNoc.min = iprogNoc.best:     iprogNoc.max = iprogNoc.best: iprogNoc.step = 1
+ 
+        STRATEGY_BRAVO_M15_SL1
+  
+        '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!   OPTYMALIZACJA 8:  GOTOWY BACKTEST !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        iTryb.min = iTryb.best:   iTryb.max = iTryb.best: iTryb.step = 1
+        iSL1.min = iSL1.best: iSL1.max = iSL1.best: iSL1.step = 1
+        iSL2.min = iSL2.best: iSL2.max = iSL2.best: iSL2.step = 1
+        iEMA.min = iEMA.best: iEMA.max = iEMA.best: iEMA.step = 1
+        iHourDzien.min = iHourDzien.best: iHourDzien.max = iHourDzien.best: iHourDzien.step = 2
+        iHourNoc.min = iHourNoc.best:   iHourNoc.max = iHourNoc.best: iHourNoc.step = 1
+        iprogDzien.min = iprogDzien.best:     iprogDzien.max = iprogDzien.best: iprogDzien.step = 1
+        iprogNoc.min = iprogNoc.best:     iprogNoc.max = iprogNoc.best: iprogNoc.step = 1
+ 
+        STRATEGY_BRAVO_M15_SL1
+        '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+               
+     
+      For m = 40 To rozmiarWierszy - 31
+    '     If ZyskCum(m) <> ZyskCum(m - 1) Then
+         Print #5, D(m) & ";" & t(m) & ";" & O(m) & ";" & h(m) & ";" & l(m) & ";" & C(m) & ";" & ZyskCum(m) & ";" & Cena(m) & ";" & Kierunek(m) & ";" & timeDzien(m) & ";" & timeNoc(m) & ";" & kierDzien(m) & ";" & kierNoc(m) & ";" & cenaDzien(m) & ";" & cenaNoc(m) & ";" & CenaBuySL(m) & ";" & CenaShortSL(m) & ";" & H11(m) & ";" & L11(m)
+     ' End If
+      Next m
+      '  On Error GoTo MojaProce_Error
+MojaProce_Error:
+      Open "D:\bravoD1\errors\errors.txt" For Append As #10
+      Print #10, nazwaRynku & ";" & "Błąd : ( " & Err.Number & " ) " & Err.Description & vbCrLf & _
+         "Procedura : " & "MojaProce " & m, vbExclamation
+      Close #10
+   
+continue_loop:
+      Close #5
+      Close #6
+      '     Close #7
+      strplik = Dir
+  ' Loop
+     Next R
+   '----------------------------------------------------
+   With Application
+      .Calculation = xlCalculationAutomatic
+      .ScreenUpdating = True
+      .CutCopyMode = False
+   End With
+
+End Sub
+
+Sub STRATEGY_BRAVO_M15_SL1()
+
+   '  On Error GoTo MojaProce_Error
+
+   bestSharpeIn = -100
+   optymalizacja = optymalizacja + 1
+   '@@@@@@@@@@@@@@@@@@@@@@@ FOR HOUR ITERATION @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+   For HourDzien = iHourDzien.min To iHourDzien.max Step iHourDzien.step
+      For HourNoc = iHourNoc.min To iHourNoc.max Step iHourNoc.step
+
+
+         '##########################################################
+         '####################### SORTING ALGORITHM ################
+         '##########################################################
+         'utworzenie zmiennych do sortowania
+         For i = 2 To rozmiarWierszy - 30
+            If i < 30 Then
+               cenaDzien(i) = IIf(IIf(nowNewday(max(1, i - HourDzien)) = 1, 1, 0) = 1, O(i), cenaDzien(i - 1))
+               cenaNoc(i) = IIf(IIf(now16(max(1, i - HourNoc)) = 1, 1, 0), O(i), cenaNoc(i - 1))
+            Else
+               cenaDzien(i) = IIf(IIf(nowNewday(i - HourDzien) = 1, 1, 0) = 1, O(i), cenaDzien(i - 1))
+               cenaNoc(i) = IIf(IIf(now16(i - HourNoc) = 1, 1, 0), O(i), cenaNoc(i - 1))
+            End If
+    
+            If i < countmidDate Then
+               numerDnia = countDays(i)
+               If nowNewday(i) = 1 Then
+                  luka(numerDnia) = cenaDzien(i) / cenaNoc(i) - 1
+                  dzien2(numerDnia) = cenaNoc(i) / cenaDzien(i - 1) - 1
+               End If
+               If now16(i) = 1 Then
+                  Dzien(numerDnia) = cenaNoc(i) / cenaDzien(i) - 1
+               End If
+            End If
+         Next i
+
+         'TABLICE DO SORTOWANIA
+         luka1 = luka:               dzien1 = Dzien:             luka2 = luka
+         lewy = LBound(luka1, 1):    prawy = UBound(luka1, 1):   koniec = UBound(luka1, 1)
+            
+         ''======ALGO SORTOWANIA!!!!!!!!!!!
+         SortowanieDwoch luka1, dzien1, lewy, prawy
+
+         progDzienSort = wynikSortowania(ileDni, luka1, dzien1, sredniZyskF, kierunekF, progF)
+         kierunekDzien = kierunekF
+         SortowanieDwoch dzien2, luka2, lewy, prawy
+         progNocSort = wynikSortowania(ileDni, dzien2, luka2, sredniZyskF, kierunekF, progF)
+         kierunekNoc = kierunekF
+
+         '@@@@@@@@@@@@@@@@@@@@@@@ FOR STREGY TRYB @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+         For tryb = iTryb.min To iTryb.max Step iTryb.step
+            '@@@@@@@@@@@@@@@@@@@@@@@ FOR STOP LOSS   @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+            For s = iEMA.min To iEMA.max Step iEMA.step
+               For q = iSL1.min To iSL1.max Step iSL1.step
+                  For w = q To q Step iSL2.step
+                     For g = iprogDzien.min To iprogDzien.max Step iprogDzien.step
+                        For f = iprogNoc.min To iprogNoc.max Step iprogNoc.step
+                            
+                           iteracja = iteracja + 1
+
+                           '##########################################################
+                           '####################### STRATEGIA ######################
+                           '##########################################################
+                           onlyBuy = 0
+                           pSL1 = mnoznik(q): pSL2 = mnoznik(w)
+                           alfa = alfaEMA(s)
+                           trybNoc = a(tryb): trybDzien = b(tryb)
+                           trybSL_L = SL_L(tryb): trybSL_S = SL_S(tryb)
+                           trybSL_Reverse = SL_Double(tryb)
+                           pKierDzien = kierunekDzien: pKierNoc = kierunekNoc
+                           pProgDzien = progDzienSort + prog(g): pProgNoc = progNocSort + prog(f)
+                                        
+                           trade = 0
+                           '@@@@@@@@@@@@@@@@@@@@@@@ FOR M ITERATION  @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                           For m = 2 To rozmiarWierszy - 30 '@@@@@ PETLA FOR @@@@@
+                              If m < 30 Then
+                                 timeDzien(m) = IIf(nowNewday(max(1, m - HourDzien)) = 1, 1, 0)
+                                 timeNoc(m) = IIf(now16(max(1, m - HourNoc)) = 1, 1, 0)
+                              Else
+                                 timeDzien(m) = IIf(nowNewday(m - HourDzien) = 1, 1, 0)
+                                 timeNoc(m) = IIf(now16(m - HourNoc) = 1, 1, 0)
+                              End If
+    
+                              EMA1(m) = IIf(D(m) = D(m + 1), EMA1(m - 1), (1 / alfa) * C(m) + (1 - 1 / alfa) * EMA1(m - 1)) 'EMA(C(m), EMA1(m - 1), 1 / alfa, D(m) <> D(m + 1))
+                              trendEMA(m) = IIf(D(m) <> D(m + 1), IIf(C(m) > EMA1(m), 1, -1), trendEMA(m - 1))
+                              H1(m) = IIf(nowNewday(m) = 1 Or h(m) > H1(m - 1), h(m), H1(m - 1))
+                              L1(m) = IIf(nowNewday(m) = 1 Or l(m) < L1(m - 1), l(m), L1(m - 1))
+                              H11(m) = IIf(D(m) <> D(m - 1), H1(m - 1), H11(m - 1))
+                              L11(m) = IIf(D(m) <> D(m - 1), L1(m - 1), L11(m - 1))
+
+                              '^^^^^^^^^^ DZIEN ^^^^^^^^^^
+                              If timeDzien(m) = 1 Then
+                                 kierDzien(m) = IIf(trybDzien = 1, Sgn((cenaDzien(m) / cenaNoc(m) - 1 - pProgDzien) * pKierDzien), IIf(trybDzien = 0, 0, IIf(trybDzien = 2, Kierunek(m - 1), Kierunek(m - 1) * -1))) '   #prognoza Dzien
+                                 'kierDzien(m) = IIf(onlyBuy, IIf(kierDzien(m) < 0, 0, kierDzien(m)), kierDzien(m))
+                                 '^^^^^^^^^^ SL ^^^^^^^^^^^^^
+                                ' DzienSL(m) = 1
+                                 CenaBuySL(m) = O(m) + ((H11(m) - L11(m)) * IIf(trendEMA(m) = 1, pSL1, pSL2) * 1 / pTick) * pTick 'max(O(m),                                  '#cena Buy SL
+                                 CenaShortSL(m) = O(m) - ((H11(m) - L11(m)) * IIf(trendEMA(m) = 1, pSL2, pSL1) * 1 / pTick) * pTick ' min(O(m), )                                 '  #cena Short SL
+
+                              Else
+                                 DzienSL(m) = DzienSL(m - 1)
+                                 CenaBuySL(m) = CenaBuySL(m - 1)                               '#cena Buy SL
+                                 CenaShortSL(m) = CenaShortSL(m - 1)                               '  #cena Short SL
+                              End If
+                              
+                              If timeDzien(m - 1) = 1 Then
+                                 DzienSL(m) = 1
+                              End If
+    
+                              '^^^^^^^^^^ LUKA ^^^^^^^^^^^
+                              If timeNoc(m) = 1 Then
+        
+                                 kierNoc(m) = IIf(trybNoc = 1, Sgn((cenaNoc(m) / cenaDzien(m) - 1 - pProgNoc) * pKierNoc), IIf(trybNoc = 0, 0, IIf(trybNoc = 2, Kierunek(m - 1), Kierunek(m - 1) * -1))) '  #prognoza Noc
+                                 'kierNoc(m) = IIf(onlyBuy, IIf(kierNoc(m) < 0, 0, kierNoc(m)), kierNoc(m))
+                                 DzienSL(m) = 0
+                              Else
+                                 DzienSL(m) = DzienSL(m - 1)
+                              End If
+         
+                              If DzienSL(m) = 1 Then
+                                 '  BuySL(m) = (O(m) >= CenaBuySL(m)) And trybSL_L  '  #odpalony SL na L
+                                 '  ShortSL(m) = (O(m) <= CenaShortSL(m)) And trybSL_S '  #odpalony SL na S
+                                 BuySL(m) = (h(m) >= max(O(m), CenaBuySL(m))) And trybSL_L '  #odpalony SL na L
+                                 ShortSL(m) = (l(m) <= min(O(m), CenaShortSL(m))) And trybSL_S '  #odpalony SL na S
+                              End If
+    
+                              '^^^^^^^^^^ CALOSC ^^^^^^^^^^^
+                              Kierunek(m) = IIf(timeDzien(m), kierDzien(m), IIf(timeNoc(m), kierNoc(m), IIf(BuySL(m) And Kierunek(m - 1) < 1, 1, IIf(ShortSL(m) And Kierunek(m - 1) > -1, -1, Kierunek(m - 1)))))
+                              Kierunek(m) = IIf(Abs(O(m) / O(m + 1) - 1) > 0.05 Or m = rozmiarWierszy - 32, 0, IIf(Abs(O(m) / O(m - 1) - 1) > 0.05, Kierunek(max(1, m - 2)), Kierunek(m)))
+                          
+                              Cena(m) = IIf(Kierunek(m) <> Kierunek(m - 1), IIf(BuySL(m), CenaBuySL(m), IIf(ShortSL(m), CenaShortSL(m), O(m))), Cena(m - 1))
+                              ZyskCum(m) = ZyskCum(m - 1) + ((Cena(m) - Cena(m - 1)) / Cena(m - 1)) * Kierunek(m - 1) - Abs(Kierunek(m) - Kierunek(m - 1)) * (0.01 / O(m) + min(0.005, max(1, pSpread * 10000 / Cena(m)) / 10000)) '
+                              
+
+                            
+                              
+                              If ZyskCum(m) <> ZyskCum(m - 1) Then
+                              
+                                 trade = trade + 1
+                                 If D(m) < startOutDate Then
+                                    tradeIn = trade
+                                 End If
+                                 
+                                 PL(trade) = Round(ZyskCum(m) - ZyskCum(m - 1), 8) + 1
+                              End If
+                              
+                              
+                           Next m
+
+                           '##########################################################
+                           '####################### WYNIKI ######################
+                           '##########################################################
+                           
+                           ZyskIn = ZyskCum(countmidDate) 'Sum1(zysk())                              '  #suma ZYSKu w okresie In sample
+                           ZyskMid = ZyskCum(countStartOutDate) - ZyskIn 'Sum1(zysk())                              '  #suma ZYSKu w okresie In sample
+                           ZyskOut = ZyskCum(rozmiarWierszy - 30) - ZyskCum(countStartOutDate)
+                           SharpeRatioIN = ZyskIn 'Mean1(1, trade, PL()) / StdDev1(1, trade, PL()) '  #SharpeRatio w okresie In sample
+                           bestZyskIn = IIf(SharpeRatioIN > bestSharpeIn And ZyskMid > 0, ZyskIn, bestZyskIn)
+                           iSL1.best = IIf(SharpeRatioIN > bestSharpeIn And ZyskMid > 0, q, iSL1.best)
+                           iSL2.best = IIf(SharpeRatioIN > bestSharpeIn And ZyskMid > 0, w, iSL2.best)
+                           iEMA.best = IIf(SharpeRatioIN > bestSharpeIn And ZyskMid > 0, s, iEMA.best)
+                           iHourDzien.best = IIf(SharpeRatioIN > bestSharpeIn And ZyskMid > 0, HourDzien, iHourDzien.best)
+                           iHourNoc.best = IIf(SharpeRatioIN > bestSharpeIn And ZyskMid > 0, HourNoc, iHourNoc.best)
+                           iprogDzien.best = IIf(SharpeRatioIN > bestSharpeIn And ZyskMid > 0, g, iprogDzien.best)
+                           iprogNoc.best = IIf(SharpeRatioIN > bestSharpeIn And ZyskMid > 0, f, iprogNoc.best)
+                           iTryb.best = IIf(SharpeRatioIN > bestSharpeIn And ZyskMid > 0, tryb, iTryb.best)
+                           bestSharpeIn = IIf(SharpeRatioIN > bestSharpeIn And ZyskMid > 0, SharpeRatioIN, bestSharpeIn)
+                        Next f
+                     Next g
+                  Next w
+               Next q
+            Next s
+         Next tryb
+      Next HourNoc
+   Next HourDzien
+
+   SharpeRatioIN = StdDev1(1, tradeIn, PL()) '  #SharpeRatio w okresie In sample
+   SharpeRatioOUT = 0 'Val(IIf(trade - tradeIn + 1 > 2, Mean1(tradeIn + 1, trade, PL()) / StdDev1(tradeIn + 1, trade, PL()), 0)) '  #SharpeRatio w okresie In sample
+
+   wyniki = nazwaRynku & ";" & optymalizacja & ";" & iteracja & ";" & Round(Timer - startTime, 2) & ";" & startDate & ";" & midDate & ";" & pTick & ";" & pSpread _
+      & " best; " & iSL1.best & ";" & iSL2.best & ";" & iEMA.best & ";" & iHourDzien.best & ";" & iHourNoc.best & ";" & pKierDzien & ";" & pKierNoc & ";" & Round(progDzienSort + prog(iprogDzien.best), 5) & ";" & Round(progNocSort + prog(iprogNoc.best), 5) & ";" & iTryb.best & " wyniki; " & Round(bestZyskIn, 4) & ";" & Round(ZyskIn, 4) & ";" & Round(ZyskMid, 4) & ";" & Round(ZyskOut, 4) & ";" & SharpeRatioIN & ";" & SharpeRatioOUT
+   Print #6, wyniki
+ 
+MojaProce_Error:
+   Open "D:\bravoD1\errors\errors.txt" For Append As #10
+   Print #10, nazwaRynku & ";" & "Błąd : ( " & Err.Number & " ) " & Err.Description & vbCrLf & _
+      "Procedura : " & "MojaProce " & m, vbExclamation
+   Close #10
+   
+End Sub
+
+
+
+
+
+Public Function TickerEstimation(ByVal Increment As Double) As Double              'linia 1
+   '---------------------------------------------------------------------------------------
+   ' Method : TickerEstimation
+   ' Author : Jakub Medon
+   ' Date   : 2016-05-28
+   ' Purpose: Find lowest increment for current market
+   '---------------------------------------------------------------------------------------
+   Dim tickery(1 To 19) As Double
+   Dim tickerMin(1 To 19) As Double
+   For i = 1 To 19 'zaimportowanie tablicy znaki2
+      tickery(i) = Sheets("ustawienia").Cells(i + 1, 9)
+      tickerMin(i) = Sheets("ustawienia").Cells(i + 1, 10)
+   Next i
+   For i = 1 To 19
+      If Increment < tickerMin(i) Then
+         TickerEstimation = max(0.0001, tickery(i - 1))
+         Exit For
+      End If
+   Next i
+    
+End Function
+
+Public Function countRowsInFile(ByVal PATCHstr As String, ByVal strplik As String, delimiter As String, ByVal startDate As Double, ByVal midDate As Double, ByVal startOutDate As Double) As Double              'linia 1
+    'liczy ilosc wierszy w pliku
+    'Set fs = CreateObject("Scripting.FileSystemObject")
+    'ChDir PATCHstr
+    ile = 0
+    stopmidDate = 1
+    stopstartOutDate = 1
+    countEndDay = -100
+    'sprawdzenie rozmiaru tablicy
+    ile = ile + 1
+    Open PATCHstr & "\" & strplik For Input As #3
+    rozmiarWierszy = 0
+    Do While Not EOF(3)
+        Line Input #3, Textline
+        ArrCells = Split(Textline, delimiter) '","
+        
+ 
+        If Val(Right(ArrCells(0), 4)) > 915 And Val(Right(ArrCells(0), 4)) < 1615 Then
+            If Val(Left(ArrCells(0), 8)) > startDate Then
+                rozmiarWierszy = rozmiarWierszy + 1
+            End If
+            If Val(Left(ArrCells(0), 8)) >= midDate And stopmidDate Then
+                countmidDate = rozmiarWierszy
+                stopmidDate = 0
+            End If
+            If Val(Left(ArrCells(0), 8)) >= startOutDate And stopstartOutDate Then
+                countStartOutDate = rozmiarWierszy
+                stopstartOutDate = 0
+            End If
+        End If
+    Loop
+    If stopmidDate = 1 Then
+        countmidDate = rozmiarWierszy
+    End If
+    If stopstartOutDate = 1 Then
+        countStartOutDate = rozmiarWierszy
+    End If
+    Close #3
+    countRowsInFile = rozmiarWierszy
+End Function
+
+
+
+
+Public Function wynikSortowania(ByVal ile As Double, ByRef zmienna() As Double, ByRef zmienna2() As Double, ByRef sredniZyskF As Double, ByRef kierunekF As Double, ByRef progF As Double) As Double
+
+   ReDim Zysk(0 To ile) As Double
+   Dim minF  As Double 'minimum
+   Dim maxF  As Double ' maximum
+   Dim absF  As Double ' abs zmienna()
+   Dim progMinF  As Double ' prog minimum
+   Dim progMaxF  As Double '  prog maximum
+   Dim zyskK  As Double ' zysk na koniec
+   minF = 10000000000#
+   maxF = -100000000000#
+   'Dim kierunekF ' 1-trend -1- anty trend
+   'Dim sredniZyskF ' sredni zysk
+   'Dim prog ' finalny prog
+   Dim stat(0 To 10) As Double
+   Dim wynik(1 To 1) As Double
+   '=====POLICZENIE ZYSKU I INNYCH STATYSTYK
+   For m = 1 To ile - 1
+      '====zysk
+      Zysk(m) = Val(zmienna2(m) + Zysk(max(1, m - 1)))
+      '====min
+      If Val(Zysk(m)) < minF Then '
+         minF = Zysk(m)
+         progMinF = zmienna(m)
+      End If
+      '===max
+      If Val(Zysk(m)) > maxF Then  '
+         maxF = Zysk(m)
+         progMaxF = zmienna(m)
+      End If
+      '===abs
+      absF = absF + Abs(zmienna2(m))
+   Next m
+            
+   '====wynik na koniec
+
+   zyskK = Zysk(ile - 1)
+   '====kierunek
+   If maxF + Abs(zyskK - maxF) > -minF + Abs(zyskK - minF) Then
+      kierunekF = -1
+   Else
+      kierunekF = 1
+   End If
+   '====sredni zysk
+   If kierunekF = 1 Then
+      sredniZyskF = Val(Round(Val(((-minF + Abs(zyskK - minF)) / Val(absF + 1))), 3))
+   Else
+      sredniZyskF = Val(Round(Val(((maxF + Abs(zyskK - maxF)) / Val(absF + 1))), 3))
+            
+   End If
+        
+   If kierunekF = 1 Then
+      wynikSortowania = progMinF 'prog
+   Else
+      wynikSortowania = progMaxF
+   End If
+        
+
+             
+End Function
+Public Sub SortowanieDwoch(tabl, tabl2, lngMin, lngMax)
+   On Error Resume Next
+   Dim l As Long
+   Dim p As Long
+   Dim med
+   Dim Temp
+   Dim temp1
+
+    
+   If IsEmpty(tabl) Then
+      Exit Sub
+   End If
+   If InStr(TypeName(tabl), "()") < 1 Then  'IsArray() is somewhat broken: Look for brackets in the type name
+      Exit Sub
+   End If
+   If lngMin = -1 Then
+      lngMin = LBound(tabl)
+   End If
+   If lngMax = -1 Then
+      lngMax = UBound(tabl)
+   End If
+   If lngMin >= lngMax Then    ' no sorting required
+      Exit Sub
+   End If
+
+   l = lngMin
+   p = lngMax
+
+
+   If lngMin < lngMax Then
+      l = lngMin
+      p = lngMax
+      med = tabl(l)
+      Do
+         While tabl(l) < med
+            l = l + 1
+         Wend
+         While tabl(p) > med
+            p = p - 1
+         Wend
+         If l <= p Then
+            Temp = tabl(l)
+            tabl(l) = tabl(p)
+            tabl(p) = Temp
+    
+            temp1 = tabl2(l)
+            tabl2(l) = tabl2(p)
+            tabl2(p) = temp1
+ 
+ 
+    
+            l = l + 1
+            p = p - 1
+         End If
+      Loop Until l >= p
+      Call SortowanieDwoch(tabl, tabl2, lngMin, p)
+      Call SortowanieDwoch(tabl, tabl2, l, lngMax)
+   End If
+End Sub
+
+
+
+
+
+
+
+
+
