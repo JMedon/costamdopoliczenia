@@ -10,6 +10,9 @@ OUTPUT: Excel import_briefing.com
 -??dane w jednej kolumnie???
 -??dane z datami jako actual i change
 
+ https://docs.python.org/3.3/library/stdtypes.html#bytes.decode
+ http://stackoverflow.com/questions/17013089/python-get-rid-of-bytes-b
+ 
  
 *import stooq.pl economic
 INPUT: URL
