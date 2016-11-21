@@ -1,0 +1,96 @@
+
+
+Analiza
+efektów działania funduszu inwestycyjnego absolutnej stopy zwrotu zbudowanego
+na bazie raportów Commitments of Traders
+
+*przedsytawienie
+się
+
+* Głównym celem
+pracy magisterskiej jest stworzenie modelu funduszu inwestycyjnego absolutnej
+stopy zwrotu wykorzystującego ogólnodostępne raporty Commitments of Traders. W
+pracy skupiono się na inwestycjach w różne klasy aktywów  kontraktów terminowych 
+
+w celu jak
+największej dywersyfikacji portfela. Istotnym elementem analiz jest odpowiedź
+na pytanie czy można zbudować portfel inwestycyjny oparty o raporty Commitments
+of Traders przynoszący dochód w każdym roku niezależnie od aktualnej
+koniunktury giełdowej i czy zarządzającym funduszem inwestycyjnym może uzyskać
+lepsze stopy zwrotu dla inwestora do innych ogólnodostępnych metod pomnażania
+kapitału na rynku.
+
+*czy opisać na
+poczatku co sie dzieje w rozdzialach?
+
+ 
+
+Historia
+funduszy inwestycyjnychHistoria
+funduszy inwestycyjnych cd.Istota
+funduszy inwestycyjnychIstota
+funduszy inwestycyjnych cd.Rodzaje
+funduszy inwestycyjnychFundusze
+inwestycyjne w Polsce + fundusze absolutnej stopy zwrotu.Opis
+raportów COTRysunek
+1.2 zagregowany raportRysunek
+1.3 niezintegrowany raport commitments od tradersRysunek
+1.4 wykres zlota i Cot   Przygotowanie
+danych kontraktów terminowychPrzygotowanie
+danych CoTKorelacja
+i regresjaDefinicja
+prognozy kierunku, stopy zwrotu, stopyzwrotu portfela inwestycyjnegoDywersyfikacjaWskazniki
+efektywnosci: zysk skumulowany, Sharpe ratio, uogolniony sharpe ratio,
+zmodyfiukowany sharpe ratio
+
+
+
+ 
+
+Rysunek
+3.1 porownanie danych # z #C.Opis
+nazw zmiennych CoTTablea
+3.4 korelacje + nie ma jednej najlepszej zmiennej + rezygnacje z użycia
+korelacjiRysunek
+3.6 dla jednej najlepszejTabela
+3.9 wyniki dla x zmiennych dla zlotaTabela
+3.10 porownania wynikow jednej i x zmiennychRysunek
+3.7 porownanie jednej i x zmiennych w modeluTabela
+3.11 rozne wartosci progowe/optymalizacjaAutorski
+model obliczania prognozy sortowaniemSortowanie
+cd.Rysunek
+3.8 wykres skum stop zwortu porownianie regresja/sortowanieTabela
+3.12 wyniki in sample out of sample rynkowRysune
+3.9 DDRysunek
+3.10 porownanie wynikow out of sample
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+ 
+
