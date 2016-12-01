@@ -1,0 +1,427 @@
+
+
+ 
+
+ 
+
+Global wynikInSample As Double, sredniZysk
+As Double, sharpeRatio As Double, sredniZyskALL As Double, typeALL As Double,
+progOne As Double, progTwo As Double
+
+ 
+
+Public Type Par
+
+  
+min As Double
+
+  
+max As Double
+
+  
+start As Double
+
+  
+end  As Double
+
+End Type
+
+ 
+
+Sub Algo1()
+
+  
+'---------------------------------------------------------------------------------------
+
+   '
+Method : Algo
+
+   '
+Author : Jakub Medon
+
+   '
+Date   : 2016-11-24
+
+   '
+Purpose: algo sort
+
+   ' TODO:
+
+   '
+
+   '
+
+   '       
+*Algosort
+
+   '       
+*dodanie nonstop L/ S do wyniku
+
+   '       
+*wygenerowanie wyniku do pliku
+
+   '       
+*wygenerowanie tasmy kierunkow do pliku
+
+   '        *
+
+  
+'Input Settings:
+
+  
+'inSample.start
+
+  
+'inSample.end
+
+  
+'outSample.end
+
+   '
+
+  
+'data
+
+   'X
+
+   'Y
+
+   '
+
+  
+'X_type - X variable type: nominal or return '1=nominal 2=returns
+
+   '
+
+   
+
+  
+'---------------------------------------------------------------------------------------
+
+ '  On
+Error GoTo MojaProce_Error
+
+  
+With Application
+
+     
+.ScreenUpdating = False
+
+     
+.Calculation = xlCalculationManual
+
+     
+.UseSystemSeparators = False
+
+     
+.DecimalSeparator = "."
+
+  
+End With
+
+'-START---------------------------------------------------
+
+Dim inSample As Par
+
+Dim outSample As Par
+
+inSample.start = 200001010000#
+
+inSample.end = 201501010000#
+
+outSample.end = 201601010000#
+
+'X_type = 2 '1=nominal 2=returns
+
+ 
+
+'####################### count rozmiarWierszy
+######################
+
+'count number of event in variable
+
+Set fs =
+CreateObject("Scripting.FileSystemObject")
+
+PATCHstr = "C:\Users\medonj\MOJE\model
+sortowania\In"
+
+ 
+
+ChDir PATCHstr
+
+strplik = Dir(PATCHstr &
+"\*.csv") '#
+
+    
+
+Open PATCHstr & "\" &
+strplik For Input As #3
+
+rozmiarWierszy =
+0
+
+Do While Not
+EOF(3)
+
+    Line Input #3, Textline
+
+        rozmiarWierszy = rozmiarWierszy + 1
+
+Loop
+
+Close #3
+
+    
+
+'####################### 'read data
+######################
+
+ReDim Temp(1 To rozmiarWierszy, 1 To 4) As
+Double
+
+ReDim TempOut(1 To rozmiarWierszy, 1 To 4)
+As Double
+
+ 
+
+Open PATCHstr & "\" &
+strplik For Input As #3
+
+i = 1
+
+e = 1
+
+X_Last = 0
+
+Do While Not EOF(3)
+
+   
+Line Input #3, Textline
+
+   
+Arrcells = Split(Textline, ",")
+
+ 
+
+   
+Data_temp = Val(Arrcells(0))
+
+   
+X_temp = Val(Arrcells(1))
+
+   
+Y_temp = Val(Arrcells(2))
+
+    
+
+   
+'In sample data
+
+   
+If Data_temp > inSample.start And Data_temp < inSample.end And
+X_temp <> "" And Y_temp <> 0 Then
+
+       
+Temp(i, 1) = Data_temp
+
+       
+Temp(i, 2) = X_temp
+
+       
+Temp(i, 3) = Y_temp
+
+       
+Temp(i, 4) = X_temp - X_Last
+
+       
+i = i + 1
+
+   
+End If
+
+   
+X_Last = X_temp
+
+    
+
+   
+'Out of sample data
+
+   
+If Data_temp >= inSample.end And Data_temp < outSample.end And
+X_temp <> "" And Y_temp <> 0 Then
+
+       
+TempOut(e, 1) = Data_temp
+
+       
+TempOut(e, 2) = X_temp
+
+       
+TempOut(e, 3) = Y_temp
+
+       
+TempOut(e, 4) = X_temp - X_Last
+
+       
+e = e + 1
+
+   
+End If
+
+   
+X_Last = X_temp
+
+Loop
+
+Close #3
+
+ 
+
+'####################### generate filtered
+variables ######################'
+
+rozmiarWierszy = i
+
+rozmiarOut = e
+
+'in sample
+
+ReDim D(1 To rozmiarWierszy) As Double
+
+ReDim X(1 To rozmiarWierszy) As Double
+
+ReDim X_return(1 To rozmiarWierszy) As
+Double
+
+ReDim Y(1 To rozmiarWierszy) As Double
+
+ 
+
+For u = 1 To rozmiarWierszy
+
+   
+D(u) = Temp(u, 1)
+
+   
+X(u) = Temp(u, 2)
+
+   
+Y(u) = Temp(u, 3)
+
+   
+X_return(u) = Temp(u, 4)
+
+Next u
+
+ 
+
+'out of sample
+
+ReDim D_Out(1 To rozmiarOut) As Double
+
+ReDim X_Out(1 To rozmiarOut) As Double
+
+ReDim X_return_Out(1 To rozmiarOut) As
+Double
+
+ReDim Y_Out(1 To rozmiarOut) As Double
+
+ReDim K_nominal(1 To rozmiarOut) As Double
+
+ReDim K_Sharpe(1 To rozmiarOut) As Double
+
+ 
+
+For u = 1 To rozmiarOut
+
+   
+D_Out(u) = TempOut(u, 1)
+
+   
+X_Out(u) = TempOut(u, 2)
+
+   
+Y_Out(u) = TempOut(u, 3)
+
+   
+X_return_Out(u) = TempOut(u, 4)
+
+Next u
+
+ 
+
+'####################### Algo Sort nominal
+######################'
+
+lewy = LBound(X, 1):    prawy = UBound(X, 1)
+
+SortowanieDwoch X, Y, lewy, prawy
+
+wynikInSample = AlgoSortNow(rozmiarWierszy,
+X, Y, sredniZyskALL, typeALL, progOne, progTwo)
+
+Debug.Print "AlgoSort nominal:";
+sredniZyskALL, typeALL, progOne, progTwo
+
+wynikNominal = wynikOutofSample(rozmiarOut,
+X_Out, Y_Out, K_nominal, K_Sharpe, wynikInSample, sredniZysk, sharpeRatio,
+typeALL, progOne, progTwo)
+
+Debug.Print "wynik AlgoSort nominal:
+"; rozmiarOut; wynikNominal; wynikInSample; sredniZysk; sharpeRatio;
+typeALL; progOne; progTwo
+
+ 
+
+ 
+
+'####################### Algo Sort returns
+######################'
+
+lewy = LBound(X, 1):    prawy = UBound(X, 1)
+
+SortowanieDwoch X_return, Y, lewy, prawy
+
+wynikInSample = AlgoSortNow(rozmiarWierszy,
+X, Y, sredniZyskALL, typeALL, progOne, progTwo)
+
+Debug.Print "AlgoSort returns:";
+sredniZyskALL, typeALL, progOne, progTwo
+
+wynikReturns = wynikOutofSample(rozmiarOut,
+X_return_Out, Y_Out, K_nominal, K_Sharpe, wynikInSample, sredniZysk, sharpeRatio,
+typeALL, progOne, progTwo)
+
+Debug.Print "wynik AlgoSort returns:
+"; rozmiarOut; wynikReturns; wynikInSample; sredniZysk; sharpeRatio;
+typeALL; progOne; progTwo
+
+ 
+
+ 
+
+ 
+
+'-END---------------------------------------------------
+
+MojaProce_Error:
+
+  
+With Application
+
+     
+.Calculation = xlCalculationAutomatic
+
+     
+.ScreenUpdating = True
+
+     
+.CutCopyMode = False
+
+  
+End With
+
+End Sub
+
