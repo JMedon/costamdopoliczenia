@@ -1,0 +1,614 @@
+
+
+Public Function max(a, b)
+
+If a > b Then
+
+max = a
+
+Else
+
+max = b
+
+End If
+
+ 
+
+ 
+
+End Function
+
+ 
+
+Public Function AlgoSortNow(ByVal ile As
+Double, ByRef zmienna() As Double, ByRef zmienna2() As Double, ByRef
+sredniZyskALL As Double, ByRef typeALL As Double, ByRef progOne As Double,
+ByRef progTwo As Double) As Double
+
+ 
+
+Dim Threshold As Double
+
+Dim Threshold2 As Double
+
+Threshold = 0.1
+
+Threshold2 = 1.3
+
+ 
+
+Dim Ycum1 As Par, Xval1 As Par, QtoStart1
+As Par, QtoEnd1 As Par, Ycum2 As Par, Xval2 As Par, QtoStart2 As Par, QtoEnd2
+As Par
+
+ 
+
+Dim Solution1 As Double
+
+Dim Solution2 As Double
+
+Dim Solution As Double
+
+Dim SredniZysk1 As Double
+
+Dim SredniZysk2 As Double
+
+Dim SredniZyskABS1a As Double
+
+Dim SredniZyskABS2a As Double
+
+Dim SredniZyskABS1b As Double
+
+Dim SredniZyskABS2b As Double
+
+Dim type1 As Double ' 1=LS 2=SL 0=NA
+
+Dim type2 As Double ' 3=LSL 4=SLS 0=NA
+
+Dim type1a As Double
+
+Dim type2a As Double
+
+ 
+
+Dim progOne1 As Double, progTwo1 As Double,
+progOne2 As Double, progTwo2 As Double
+
+ 
+
+ReDim Zysk1(0 To ile) As Double
+
+ReDim Zysk2(0 To ile) As Double
+
+  
+
+Ycum1.min = 10000000000#
+
+Ycum1.max = -100000000000#
+
+'Generate Ycum1 Xval1 .min .max
+
+   For m = 1 To ile
+
+      '====zysk
+
+      Zysk1(m) = Val(zmienna2(m) + Zysk1(max(1,
+m - 1)))
+
+      '====min
+
+     
+If Val(Zysk1(m)) < Ycum1.min Then '
+
+        
+Ycum1.min = Zysk1(m)
+
+         Xval1.min = zmienna(m)
+
+         QtoStart1.min
+= m / ile
+
+        
+
+
+     
+End If
+
+     
+'===max
+
+     
+If Val(Zysk1(m)) > Ycum1.max Then 
+'
+
+        
+Ycum1.max = Zysk1(m)
+
+         Xval1.max = zmienna(m)
+
+         QtoStart1.max
+= m / ile
+
+     
+End If
+
+   
+Next m
+
+ 
+
+Ycum1.start = 0
+
+Ycum1.end = Zysk1(ile)
+
+QtoEnd1.min = 1 - QtoStart1.min
+
+QtoEnd1.max = 1 - QtoStart1.max
+
+If QtoStart1.min < Threshold Then
+
+   
+QtoStart1.start = 1
+
+Else
+
+   
+QtoStart1.start = 0
+
+End If
+
+If QtoStart1.max < Threshold Then
+
+   
+QtoStart1.end = 1
+
+Else
+
+   
+QtoStart1.end = 0
+
+End If
+
+If QtoEnd1.min < Threshold Then
+
+   
+QtoEnd1.start = 1
+
+Else
+
+   
+QtoEnd1.start = 0
+
+End If
+
+If QtoEnd1.max < Threshold Then
+
+   
+QtoEnd1.end = 1
+
+Else
+
+   
+QtoEnd1.end = 0
+
+End If
+
+ 
+
+ 
+
+'generate pomocnicze abs
+
+If QtoStart1.end + QtoEnd1.end = 0 Then
+
+SredniZyskABS1a = Ycum1.max + Abs(Ycum1.max
+- Ycum1.end)
+
+Else
+
+SredniZyskABS1a = 0
+
+End If
+
+If QtoStart1.start + QtoEnd1.start = 0 Then
+
+SredniZyskABS1b =
+-Ycum1.min + Abs(Ycum1.min - Ycum1.end)
+
+Else
+
+SredniZyskABS1b =
+0
+
+End If
+
+ 
+
+SredniZysk1 =
+max(SredniZyskABS1a, SredniZyskABS1b)
+
+ 
+
+'Generate type1
+
+If SredniZyskABS1a > SredniZyskABS1b
+Then
+
+   
+type1a = 1
+
+Else
+
+   
+type1a = 2
+
+End If
+
+ 
+
+If type1a = 2 Then
+
+   
+If QtoStart1.start + QtoEnd1.start > 0 Then
+
+   
+type1 = 0
+
+   
+Else
+
+   
+type1 = 2
+
+   
+End If
+
+Else
+
+   
+If QtoStart1.end + QtoEnd1.end > 0 Then
+
+   
+type1 = 0
+
+   
+Else
+
+   
+type1 = 1
+
+   
+End If
+
+End If
+
+ 
+
+'Generate progOne1
+
+If type1 = 2 Then
+
+   
+progOne1 = Xval1.min
+
+Else
+
+   
+progOne1 = Xval1.max
+
+End If
+
+ 
+
+'Generate Solution1
+
+If SredniZysk1 / Abs(Ycum1.end) <
+Threshold2 Or type1 = 0 Then
+
+   
+Solution1 = 0
+
+Else
+
+   
+Solution1 = 1
+
+End If
+
+ 
+
+'Choose Solution
+
+If Solution1 = 0 And Solution2 = 0 Then
+
+   
+Solution = 0
+
+ElseIf Solution1 = 0 Then
+
+   
+Solution = 2
+
+ElseIf Solution2 = 0 Then
+
+   
+Solution = 1
+
+ElseIf SredniZysk1 > SredniZysk2 Then
+
+   
+Solution = 1
+
+Else
+
+       
+Solution = 2
+
+End If
+
+ 
+
+'Generate Final Solution
+
+If Solution = 0 Then
+
+   
+typeALL = 0
+
+   
+progOne = 0
+
+   
+progTwo = 0
+
+   
+sredniZyskALL = 0
+
+ElseIf Solution = 1 Then
+
+   
+typeALL = type1
+
+    progOne = progOne1
+
+    progTwo = 0
+
+    sredniZyskALL = Round(SredniZysk1 / ile, 4)
+
+Else
+
+ 
+
+   
+typeALL = type2
+
+   
+progOne = progOne2
+
+   
+progTwo = progTwo2
+
+    sredniZyskALL = SredniZysk2
+
+End If
+
+ 
+
+ 
+
+ 
+
+AlgoSortNow =
+sredniZyskALL ' ZMIENIC NA SHARPE RATIO!!
+
+             
+
+End Function
+
+ 
+
+Public Function wynikOutofSample(ByVal ile
+As Double, ByRef X_Out() As Double, ByRef Y_Out() As Double, ByRef K_nominal()
+As Double, ByRef K_Sharpe() As Double, ByRef InSampleSharpe As Double, ByRef
+sredniZysk As Double, ByRef sharpeRatio As Double, ByRef typeALL As Double,
+ByRef progOne As Double, ByRef progTwo As Double) As Double
+
+ 
+
+ 
+
+Dim OutZysk As Double
+
+ReDim Zysk(1 To ile) As Double
+
+ReDim K_nominal(1 To ile) As Double
+
+ReDim K_Sharpe(1 To ile) As Double
+
+ 
+
+For u = 1 To ile
+
+   
+If typeALL = 1 Then
+
+       
+K_nominal(u) = Sgn(X_Out(u) - progOne)
+
+       
+Zysk(u) = K_nominal(u) * Y_Out(u)
+
+   
+ElseIf typeALL = 2 Then
+
+       
+K_nominal(u) = -Sgn(X_Out(u) - progOne)
+
+       
+Zysk(u) = K_nominal(u) * Y_Out(u)
+
+   
+ElseIf typeALL = 3 Then
+
+       
+If X_Out(u) < progOne Then
+
+           
+K_nominal(u) = 1
+
+           
+Zysk(u) = K_nominal(u) * Y_Out(u)
+
+       
+Else
+
+           
+K_nominal(u) = Sgn(X_Out(u) - progTwo)
+
+           
+Zysk(u) = K_nominal(u) * Y_Out(u)
+
+       
+End If
+
+   
+ElseIf typeALL = 4 Then
+
+       
+If X_Out(u) < progOne Then
+
+           
+K_nominal(u) = -1
+
+           
+Zysk(u) = K_nominal(u) * Y_Out(u)
+
+       
+Else
+
+           
+K_nominal(u) = -Sgn(X_Out(u) - progTwo)
+
+           
+Zysk(u) = K_nominal(u) * Y_Out(u)
+
+       
+End If
+
+   
+Else
+
+       
+K_nominal(u) = 0
+
+       
+Zysk(u) = 0
+
+   
+End If
+
+    
+
+   
+OutZysk = OutZysk + Zysk(u)
+
+   
+K_Sharpe(u) = K_nominal(u) * InSampleSharpe
+
+Next u
+
+sredniZysk = Round(OutZysk / ile, 4)
+
+sharpeRatio = Round(sredniZysk /
+StdDev(ile, Zysk()), 4) ' 'POPRAWIC
+
+wynikOutofSample = Round(sharpeRatio, 4)
+
+            
+
+
+End Function
+
+'***********************************************************************
+
+ '*                                                      
+Mean                                                 
+*
+
+ '***********************************************************************
+
+ Function Mean(k As Double, Arr() As Double)
+
+     
+Dim Sum As Double
+
+     
+Dim i As Integer
+
+ 
+
+     
+Sum = 0
+
+     
+For i = 1 To k
+
+         
+Sum = Sum + Arr(i)
+
+     
+Next i
+
+  
+
+     
+Mean = Sum / k
+
+ 
+
+ End
+Function
+
+ 
+
+'************************************************************************
+
+ '*                                             
+Standard Deviation                                    *
+
+ '************************************************************************
+
+ Function StdDev(k As Double, Arr() As Double)
+
+     
+Dim i As Integer
+
+     
+Dim avg As Single, SumSq As Double
+
+  
+
+ 
+
+    
+avg = Mean(k, Arr)
+
+     
+For i = 1 To k
+
+          
+SumSq = SumSq + (Arr(i) - avg) ^ 2
+
+     
+Next i
+
+  
+
+     
+StdDev = Sqr(SumSq / (k - 1))
+
+ 
+
+ End
+Function
+
